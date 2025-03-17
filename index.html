@@ -31,7 +31,7 @@
 </head>
 <body>
     <h1>Делай махи телефоном!</h1>
-    <div id="timer">Осталось: 60 сек</div>
+    <div id="timer">Осталось: 20 сек</div>
     <div id="score">Махов: 0</div>
     <button onclick="startGame()">Начать</button>
 
@@ -47,7 +47,7 @@
             gameRunning = true;
             swingCount = 0;
             document.getElementById('score').textContent = `Махов: ${swingCount}`;
-            let timeLeft = 60;
+            let timeLeft = 20;
 
             // Запрос разрешения на использование сенсоров
             if (typeof DeviceMotionEvent.requestPermission === 'function') {
