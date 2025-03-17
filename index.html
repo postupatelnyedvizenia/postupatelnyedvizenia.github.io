@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра: Махи телефоном</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #counter { font-size: 2em; margin: 20px; }
+        #timer { font-size: 1.5em; margin: 20px; }
+        button { font-size: 1.5em; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Сколько махов сделаешь за минуту?</h1>
+    <div id="counter">0</div>
+    <div id="timer">01:00</div>
+    <button id="startBtn">Старт</button>
+    <script>
+        let count = 0;
+        let isPlaying = false;
+        let lastY = 0;
+        let threshold = 10; // Чувствительность махов
+        let timer;
+        let timeLeft = 60; // Время в секундах
+        let countdown;
+
+        document.getElementById('startBtn').addEventListener('click', () => {
+            if (!isPlaying) {
+                count = 0;
+                timeLeft = 60;
+                document.getElementById('counter').textContent = count;
+                document.getElementById('timer').textContent = '01:00';
+                isPlaying = true;
+                
+                // Запуск таймера на 60 секунд
+                timer = setTimeout(() => {
+                    isPlaying = false;
+                    clearInterval(countdown);
+                    alert(`Время вышло! Ты сделал ${count} махов!`);
+                }, 60000);
+
+                // Запуск обратного отсчета
+                countdown = setInterval(() => {
+                    timeLeft--;
+                    let minutes = Math.floor(timeLeft / 60);
+                    let seconds = timeLeft % 60;
+                    document.getElementById('timer').textContent = 
+                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }, 1000);
+            }
+        });
+
+        window.addEventListener('devicemotion', (event) => {
+            if (isPlaying) {
+                let y = event.accelerationIncludingGravity.y;
+                if (Math.abs(y - lastY) > threshold) {
+                    count++;
+                    document.getElementById('counter').textContent = count;
+                }
+                lastY = y;
+            }
+        });
+    </script>
+</body>
+</html>
