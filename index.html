@@ -3,64 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра: Махи телефоном</title>
+    <title>Игра: Махи за минуту</title>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        #counter { font-size: 2em; margin: 20px; }
-        #timer { font-size: 1.5em; margin: 20px; }
-        button { font-size: 1.5em; padding: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        #score, #timer {
+            font-size: 32px;
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-    <h1>Сколько махов сделаешь за минуту?</h1>
-    <div id="counter">0</div>
-    <div id="timer">01:00</div>
-    <button id="startBtn">Старт</button>
+    <h1>Делай махи телефоном!</h1>
+    <div id="timer">Осталось: 60 сек</div>
+    <div id="score">Махов: 0</div>
+    <button onclick="startGame()">Начать</button>
+
     <script>
-        let count = 0;
-        let isPlaying = false;
-        let lastY = 0;
-        let threshold = 10; // Чувствительность махов
+        let swingCount = 0;
+        let lastAcceleration = 0;
+        const threshold = 15; // Порог для определения "маха"
         let timer;
-        let timeLeft = 60; // Время в секундах
-        let countdown;
+        let gameRunning = false;
 
-        document.getElementById('startBtn').addEventListener('click', () => {
-            if (!isPlaying) {
-                count = 0;
-                timeLeft = 60;
-                document.getElementById('counter').textContent = count;
-                document.getElementById('timer').textContent = '01:00';
-                isPlaying = true;
-                
-                // Запуск таймера на 60 секунд
-                timer = setTimeout(() => {
-                    isPlaying = false;
-                    clearInterval(countdown);
-                    alert(`Время вышло! Ты сделал ${count} махов!`);
-                }, 60000);
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            swingCount = 0;
+            document.getElementById('score').textContent = `Махов: ${swingCount}`;
+            let timeLeft = 60;
 
-                // Запуск обратного отсчета
-                countdown = setInterval(() => {
-                    timeLeft--;
-                    let minutes = Math.floor(timeLeft / 60);
-                    let seconds = timeLeft % 60;
-                    document.getElementById('timer').textContent = 
-                        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                }, 1000);
+            // Запрос разрешения на использование сенсоров
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            startMotionListener();
+                            startTimer(timeLeft);
+                        } else {
+                            alert('Разрешение на использование сенсоров не получено.');
+                            gameRunning = false;
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Для браузеров, где не требуется явное разрешение
+                startMotionListener();
+                startTimer(timeLeft);
             }
-        });
+        }
 
-        window.addEventListener('devicemotion', (event) => {
-            if (isPlaying) {
-                let y = event.accelerationIncludingGravity.y;
-                if (Math.abs(y - lastY) > threshold) {
-                    count++;
-                    document.getElementById('counter').textContent = count;
+        function startTimer(timeLeft) {
+            timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').textContent = `Осталось: ${timeLeft} сек`;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    document.getElementById('timer').textContent = 'Время вышло!';
+                    window.removeEventListener('devicemotion', handleMotion);
+                    gameRunning = false;
                 }
-                lastY = y;
+            }, 1000);
+        }
+
+        function startMotionListener() {
+            window.addEventListener('devicemotion', handleMotion);
+        }
+
+        function handleMotion(event) {
+            const accel = event.accelerationIncludingGravity;
+            if (!accel) return;
+
+            const x = accel.x || 0;
+            const y = accel.y || 0;
+            const z = accel.z || 0;
+            const acceleration = Math.sqrt(x * x + y * y + z * z);
+
+            if (Math.abs(acceleration - lastAcceleration) > threshold) {
+                swingCount++;
+                document.getElementById('score').textContent = `Махов: ${swingCount}`;
             }
-        });
+            lastAcceleration = acceleration;
+        }
     </script>
 </body>
 </html>
